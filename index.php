@@ -49,8 +49,13 @@
 			die(json_encode($domainInfo));
 			break;
 
+		case "getSLDS":
+			$getSLDS = sql("SELECT name,uuid,expiration FROM `domains` WHERE `account` = ? AND `uuid` IS NOT NULL AND `expiration` IS NOT NULL ORDER BY `name` ASC", [$data["user"]]);
+			die(json_encode($getSLDS));
+			break;
+
 		case "getZones":
-			$getZones = sql("SELECT name,uuid FROM `domains` WHERE `account` = ? AND `uuid` IS NOT NULL ORDER BY `name` ASC", [$data["user"]]);
+			$getZones = sql("SELECT name,uuid FROM `domains` WHERE `account` = ? AND `uuid` IS NOT NULL AND `expiration` IS NULL ORDER BY `name` ASC", [$data["user"]]);
 			die(json_encode($getZones));
 			break;
 
