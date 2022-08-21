@@ -50,18 +50,18 @@
 			break;
 
 		case "getSLDS":
-			$getSLDS = sql("SELECT name,uuid,expiration FROM `domains` WHERE `account` = ? AND `uuid` IS NOT NULL AND `expiration` IS NOT NULL ORDER BY `name` ASC", [$data["user"]]);
+			$getSLDS = sql("SELECT `name`,`uuid` AS `id`,`expiration`,`renew` FROM `domains` WHERE `account` = ? AND `uuid` IS NOT NULL AND `expiration` IS NOT NULL ORDER BY `name` ASC", [$data["user"]]);
 			die(json_encode($getSLDS));
 			break;
 
 		case "getZones":
-			$getZones = sql("SELECT name,uuid FROM `domains` WHERE `account` = ? AND `uuid` IS NOT NULL AND `expiration` IS NULL ORDER BY `name` ASC", [$data["user"]]);
+			$getZones = sql("SELECT `name`,`uuid` AS `id` FROM `domains` WHERE `account` = ? AND `uuid` IS NOT NULL AND `expiration` IS NULL ORDER BY `name` ASC", [$data["user"]]);
 			die(json_encode($getZones));
 			break;
 
 		case "getRecords":
 			$domainId = idForZone($data["zone"])["id"];
-			$getRecords = sql("SELECT name,type,content,ttl,prio,uuid FROM `records` WHERE `domain_id` = ? AND `system` != 1 AND `type` IS NOT NULL AND `uuid` IS NOT NULL ORDER BY `type`,`name`,`prio` ASC", [$domainId]);
+			$getRecords = sql("SELECT `name`,`type`,`content`,`ttl`,`prio`,`uuid` FROM `records` WHERE `domain_id` = ? AND `system` != 1 AND `type` IS NOT NULL AND `uuid` IS NOT NULL ORDER BY `type`,`name`,`prio` ASC", [$domainId]);
 			die(json_encode($getRecords));
 			break;
 
