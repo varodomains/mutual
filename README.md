@@ -1,4 +1,4 @@
-# hshub mutual
+# varo mutual
 
 This is the API which sets on the master PowerDNS replication server.
 
