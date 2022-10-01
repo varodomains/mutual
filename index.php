@@ -38,6 +38,12 @@
 					break;
 			}
 			break;
+
+		case "editRecord":
+			$domain = domainForZone($data["zone"]);
+
+			$data["name"] = formatName($data["name"], $domain);
+			break;
 		
 		default:
 			break;
@@ -116,6 +122,13 @@
 			$updateRecord = sql("UPDATE `records` SET `".$data["column"]."` = ? WHERE `uuid` = ?", [$data["value"], $data["record"]]);
 			$rectifyZone = pdns("rectify-zone ".$domain);
 			die(json_encode(["value" => $data["value"]]));
+			break;
+
+		case "editRecord":
+			$domain = domainForZone($data["zone"]);
+			$updateRecord = sql("UPDATE `records` SET `name` = ?, `content` = ?, `prio` = ?, `ttl` = ? WHERE `uuid` = ?", [$data["name"], $data["content"], $data["prio"], $data["ttl"], $data["record"]]);
+			$rectifyZone = pdns("rectify-zone ".$domain);
+			die(json_encode($data));
 			break;
 
 		case "deleteRecord":
