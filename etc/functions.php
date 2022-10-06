@@ -17,6 +17,12 @@
 		return sql("SELECT `id` FROM `domains` WHERE `uuid` = ?", [$zone])[0];
 	}
 
+	function domainInfoForZone($zone) {
+		$getDomain = sql("SELECT * FROM `domains` WHERE `uuid` = ?", [$zone]);
+		
+		return $getDomain[0];
+	}
+
 	function domainForZone($zone) {
 		$getDomain = sql("SELECT `name` FROM `domains` WHERE `uuid` = ?", [$zone]);
 		
@@ -42,6 +48,10 @@
 		}
 		
 		return $nsRecords;
+	}
+
+	function recordForID($uuid) {
+		return sql("SELECT * FROM `records` WHERE `uuid` = ?", [$uuid])[0];
 	}
 
 	function getTLDS() {

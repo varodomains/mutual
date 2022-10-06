@@ -10,6 +10,7 @@
 
 	switch ($data["action"]) {
 		case "addRecord":
+		case "newRecord":
 			$domain = domainForZone($data["zone"]);
 
 			if ($data["type"] !== "MX") {
@@ -104,16 +105,38 @@
 			break;
 
 		case "showZone":
-			$domain = domainForZone($data["zone"]);
+			$domainInfo = domainInfoForZone($data["zone"]);
+			$domain = $domainInfo["name"];
 			$dsRecord = dsForDomain($domain);
 			$nsRecords = nsForDomain($domain);
-			die(json_encode(["NS" => $nsRecords, "DS" => $dsRecord]));
+
+			$output = [
+				"NS" => $nsRecords,
+				"DS" => $dsRecord,
+				"editable" => false
+			];
+
+			if ($domainInfo["registrar"]) {
+				$output["editable"] = true;
+			}
+
+			die(json_encode($output));
 			break;
 
 		case "addRecord":
+		case "newRecord":
 			$domain = domainForZone($data["zone"]);
 			$domainId = idForZone($data["zone"])["id"];
-			$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid) values (?,?,?,?,?,?,?)", [$domainId, $data["name"], $data["type"], $data["content"], $data["ttl"], $data["prio"], uuid()]);
+			
+			if ($data["type"] == "REDIRECT") {
+				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, disabled) values (?,?,?,?,?,?,?)", [$domainId, $data["name"], $data["type"], $data["content"], $data["ttl"], $data["prio"], uuid(), 1]);
+				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) values (?,?,?,?,?,?,?,?)", [$domainId, $data["name"], "ALIAS", "txtdirect.hshub.io", $data["ttl"], $data["prio"], uuid(), 1]);
+				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) values (?,?,?,?,?,?,?,?)", [$domainId, "_redirect.".$data["name"], "TXT", "v=txtv0;type=host;to=".$data["content"], $data["ttl"], $data["prio"], uuid(), 1]);
+			}
+			else {
+				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid) values (?,?,?,?,?,?,?)", [$domainId, $data["name"], $data["type"], $data["content"], $data["ttl"], $data["prio"], uuid()]);
+			}
+
 			$rectifyZone = pdns("rectify-zone ".$domain);
 			break;
 
@@ -133,7 +156,17 @@
 
 		case "deleteRecord":
 			$domain = domainForZone($data["zone"]);
-			$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$data["record"]]);
+			$recordInfo = recordForID($data["record"]);
+
+			if ($recordInfo["type"] == "REDIRECT") {
+				$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$data["record"]]);
+				$deleteRecord = sql("DELETE FROM `records` WHERE `type` = 'ALIAS' AND `name` = ? AND `system` = 1 AND `domain_id` = ?", [$recordInfo["name"], $recordInfo["domain_id"]]);
+				$deleteRecord = sql("DELETE FROM `records` WHERE `type` = 'TXT' AND `name` = ? AND `system` = 1 AND `domain_id` = ?", ["_redirect.".$recordInfo["name"], $recordInfo["domain_id"]]);
+			}
+			else {
+				$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$data["record"]]);
+			}
+
 			$rectifyZone = pdns("rectify-zone ".$domain);
 			break;
 
