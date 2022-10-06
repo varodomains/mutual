@@ -129,7 +129,7 @@
 			$domainId = idForZone($data["zone"])["id"];
 			
 			if ($data["type"] == "REDIRECT") {
-				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, disabled) values (?,?,?,?,?,?,?)", [$domainId, $data["name"], $data["type"], $data["content"], $data["ttl"], $data["prio"], uuid(), 1]);
+				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, disabled) values (?,?,?,?,?,?,?,?)", [$domainId, $data["name"], $data["type"], $data["content"], $data["ttl"], $data["prio"], uuid(), 1]);
 				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) values (?,?,?,?,?,?,?,?)", [$domainId, $data["name"], "ALIAS", "txtdirect.hshub.io", $data["ttl"], $data["prio"], uuid(), 1]);
 				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) values (?,?,?,?,?,?,?,?)", [$domainId, "_redirect.".$data["name"], "TXT", "v=txtv0;type=host;to=".$data["content"], $data["ttl"], $data["prio"], uuid(), 1]);
 			}
@@ -142,14 +142,49 @@
 
 		case "updateRecord":
 			$domain = domainForZone($data["zone"]);
-			$updateRecord = sql("UPDATE `records` SET `".$data["column"]."` = ? WHERE `uuid` = ?", [$data["value"], $data["record"]]);
+			$recordInfo = recordForID($data["record"]);
+
+			if ($recordInfo["type"] == "REDIRECT") {
+				$redirectRecords = recordsForRedirect($data["record"]);
+				switch ($data["column"]) {
+					case "name":
+						$aliasValue = $data["value"];
+						$txtValue = "_redirect.".$data["value"];
+						break;
+
+					case "content":
+						$txtValue = "v=txtv0;type=host;to=".$data["value"];
+						break;
+				}
+
+				if (@$aliasValue) {
+					$updateRecord = sql("UPDATE `records` SET `".$data["column"]."` = ? WHERE `uuid` = ?", [$aliasValue, $redirectRecords["ALIAS"]]);
+				}
+				$updateRecord = sql("UPDATE `records` SET `".$data["column"]."` = ? WHERE `uuid` = ?", [$txtValue, $redirectRecords["TXT"]]);
+				$updateRecord = sql("UPDATE `records` SET `".$data["column"]."` = ? WHERE `uuid` = ?", [$data["value"], $data["record"]]);
+			}
+			else {
+				$updateRecord = sql("UPDATE `records` SET `".$data["column"]."` = ? WHERE `uuid` = ?", [$data["value"], $data["record"]]);
+			}
+
 			$rectifyZone = pdns("rectify-zone ".$domain);
 			die(json_encode(["value" => $data["value"]]));
 			break;
 
 		case "editRecord":
 			$domain = domainForZone($data["zone"]);
-			$updateRecord = sql("UPDATE `records` SET `name` = ?, `content` = ?, `prio` = ?, `ttl` = ? WHERE `uuid` = ?", [$data["name"], $data["content"], $data["prio"], $data["ttl"], $data["record"]]);
+			$recordInfo = recordForID($data["record"]);
+
+			if ($recordInfo["type"] == "REDIRECT") {
+				$redirectRecords = recordsForRedirect($data["record"]);
+				$updateRecord = sql("UPDATE `records` SET `name` = ? WHERE `uuid` = ?", [$data["name"], $redirectRecords["ALIAS"]]);
+				$updateRecord = sql("UPDATE `records` SET `name` = ?, `content` = ? WHERE `uuid` = ?", ["_redirect.".$data["name"], "v=txtv0;type=host;to=".$data["content"], $redirectRecords["TXT"]]);
+				$updateRecord = sql("UPDATE `records` SET `name` = ?, `content` = ?, `prio` = ?, `ttl` = ? WHERE `uuid` = ?", [$data["name"], $data["content"], $data["prio"], $data["ttl"], $data["record"]]);
+			}
+			else {
+				$updateRecord = sql("UPDATE `records` SET `name` = ?, `content` = ?, `prio` = ?, `ttl` = ? WHERE `uuid` = ?", [$data["name"], $data["content"], $data["prio"], $data["ttl"], $data["record"]]);
+			}
+			
 			$rectifyZone = pdns("rectify-zone ".$domain);
 			die(json_encode($data));
 			break;

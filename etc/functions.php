@@ -54,6 +54,17 @@
 		return sql("SELECT * FROM `records` WHERE `uuid` = ?", [$uuid])[0];
 	}
 
+	function recordsForRedirect($record) {
+		$recordInfo = recordForID($record);
+		$aliasRecord = sql("SELECT * FROM `records` WHERE `type` = 'ALIAS' AND `name` = ? AND `system` = 1 AND `domain_id` = ?", [$recordInfo["name"], $recordInfo["domain_id"]])[0]["uuid"];
+		$txtRecord = sql("SELECT * FROM `records` WHERE `type` = 'TXT' AND `name` = ? AND `system` = 1 AND `domain_id` = ?", ["_redirect.".$recordInfo["name"], $recordInfo["domain_id"]])[0]["uuid"];
+
+		return [
+			"ALIAS" => $aliasRecord,
+			"TXT" => $txtRecord
+		];
+	}
+
 	function getTLDS() {
 		$json = file_get_contents($path."etc/tlds.txt");
 		$tlds = json_decode($json);
