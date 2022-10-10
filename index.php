@@ -130,7 +130,7 @@
 			
 			if ($data["type"] == "REDIRECT") {
 				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, disabled) values (?,?,?,?,?,?,?,?)", [$domainId, $data["name"], $data["type"], $data["content"], $data["ttl"], $data["prio"], uuid(), 1]);
-				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) values (?,?,?,?,?,?,?,?)", [$domainId, $data["name"], "ALIAS", "txtdirect.hshub.io", $data["ttl"], $data["prio"], uuid(), 1]);
+				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) values (?,?,?,?,?,?,?,?)", [$domainId, $data["name"], "ALIAS", "redirect.varo.domains", $data["ttl"], $data["prio"], uuid(), 1]);
 				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) values (?,?,?,?,?,?,?,?)", [$domainId, "_redirect.".$data["name"], "TXT", "v=txtv0;type=host;to=".$data["content"], $data["ttl"], $data["prio"], uuid(), 1]);
 			}
 			else {
