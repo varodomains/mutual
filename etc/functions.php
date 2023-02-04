@@ -66,7 +66,7 @@
 	}
 
 	function getTLDS() {
-		$json = file_get_contents($path."etc/tlds.txt");
+		$json = file_get_contents($GLOBALS["path"]."etc/tlds.txt");
 		$tlds = json_decode($json);
 
 		return $tlds;

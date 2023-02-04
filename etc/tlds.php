@@ -1,5 +1,5 @@
 <?php
-	include "/var/www/html/mutual/etc/includes.php";
+	include "/home/trobotham/web/int-api.varo.domains/public_html/etc/includes.php";
 
 	$html = file_get_contents("https://data.iana.org/TLD/tlds-alpha-by-domain.txt");
 

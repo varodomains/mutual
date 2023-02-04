@@ -95,6 +95,7 @@
 				goto retry;
 			}
 			else {
+				var_dump($message);
 				//return $message;
 				//error
 			}
