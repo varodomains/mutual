@@ -1,5 +1,5 @@
 <?php
-	include "/home/trobotham/web/int-api.varo.domains/public_html/etc/includes.php";
+	include "includes.php";
 
 	$html = file_get_contents("https://data.iana.org/TLD/tlds-alpha-by-domain.txt");
 
@@ -9,6 +9,6 @@
 		array_shift($tlds);
 
 		$json = json_encode($tlds);
-		file_put_contents($path."etc/tlds.txt", $json);
+		file_put_contents($GLOBALS["path"]."etc/tlds.txt", $json);
 	}
 ?>
