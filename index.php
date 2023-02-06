@@ -4,6 +4,12 @@
 	$json = file_get_contents('php://input');
 	$data = json_decode($json, true);
 
+	if (@$GLOBALS["pass"]) {
+		if (!@$data["pass"] || $data["pass"] !== $GLOBALS["pass"]) {
+			die();
+		}
+	}
+
 	if (!@$data["action"]) {
 		die();
 	}

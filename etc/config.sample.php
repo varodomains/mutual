@@ -14,6 +14,8 @@
 	$config["remoteSqlPass"] = "pass";
 	$config["remoteSqlDatabase"] = "pdns";
 
+	$GLOBALS["pass"] = "";
+
 	$GLOBALS["normalSOA"] = "ns1.".$GLOBALS["icannHostname"]." ops.".$GLOBALS["icannHostname"]." 1 10800 3600 604800 3600";
 	$GLOBALS["normalNS1"] = "ns1.".$GLOBALS["icannHostname"];
 	$GLOBALS["normalNS2"] = "ns2.".$GLOBALS["icannHostname"];
