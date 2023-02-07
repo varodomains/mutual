@@ -1,5 +1,5 @@
 <?php
-	$path = "/var/www/html/mutual/";
+	$GLOBALS["path"] = "/var/www/html/mutual/";
 
 	$GLOBALS["hnsHostname"] = "varo";
 	$GLOBALS["icannHostname"] = "varo.domains";
