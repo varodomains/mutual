@@ -6,12 +6,12 @@
 
 	if (@$GLOBALS["pass"]) {
 		if (!@$data["pass"] || $data["pass"] !== $GLOBALS["pass"]) {
-			die();
+			die("No password or invalid password provided.");
 		}
 	}
 
 	if (!@$data["action"]) {
-		die();
+		die("No action provided.");
 	}
 
 	switch ($data["action"]) {

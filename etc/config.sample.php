@@ -4,15 +4,15 @@
 	$GLOBALS["hnsHostname"] = "varo";
 	$GLOBALS["icannHostname"] = "varo.domains";
 
-	$config["localSqlHost"] = "localhost";
-	$config["localSqlUser"] = "user";
-	$config["localSqlPass"] = "pass";
-	$config["localSqlDatabase"] = "pdns";
+	$GLOBALS["localSqlHost"] = "localhost";
+	$GLOBALS["localSqlUser"] = "user";
+	$GLOBALS["localSqlPass"] = "pass";
+	$GLOBALS["localSqlDatabase"] = "pdns";
 
-	$config["remoteSqlHost"] = "localhost";
-	$config["remoteSqlUser"] = "user";
-	$config["remoteSqlPass"] = "pass";
-	$config["remoteSqlDatabase"] = "pdns";
+	$GLOBALS["remoteSqlHost"] = "localhost";
+	$GLOBALS["remoteSqlUser"] = "user";
+	$GLOBALS["remoteSqlPass"] = "pass";
+	$GLOBALS["remoteSqlDatabase"] = "pdns";
 
 	$GLOBALS["pass"] = "";
 

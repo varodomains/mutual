@@ -1,9 +1,9 @@
 <?php
 	$GLOBALS["localDatabaseInfo"] = [
-		"host" => $config["localSqlHost"],
-		"user" => $config["localSqlUser"],
-		"pass" => $config["localSqlPass"],
-		"db" => $config["localSqlDatabase"],
+		"host" => $GLOBALS["localSqlHost"],
+		"user" => $GLOBALS["localSqlUser"],
+		"pass" => $GLOBALS["localSqlPass"],
+		"db" => $GLOBALS["localSqlDatabase"],
 		"options" => [
 			PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
 			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -11,10 +11,10 @@
 		]
 	];
 	$GLOBALS["remoteDatabaseInfo"] = [
-		"host" => $config["remoteSqlHost"],
-		"user" => $config["remoteSqlUser"],
-		"pass" => $config["remoteSqlPass"],
-		"db" => $config["remoteSqlDatabase"],
+		"host" => $GLOBALS["remoteSqlHost"],
+		"user" => $GLOBALS["remoteSqlUser"],
+		"pass" => $GLOBALS["remoteSqlPass"],
+		"db" => $GLOBALS["remoteSqlDatabase"],
 		"options" => [
 			PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
 			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
