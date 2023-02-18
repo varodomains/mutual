@@ -3,7 +3,7 @@
 This is the API which sets on the master PowerDNS replication server.
 
 The TODO list for setting up Mutual is:
-* Setup your web server and PHP (we run PHP 7.4)
+* Setup your web server and PHP (we run PHP 8.2)
 * Setup sudo to access pdnsutil under the web user
 * Import the modified database for PowerDNS/Mutual
 * `cd etc && cp config.sample.php config.php && vim config.php`
