@@ -74,7 +74,18 @@
 
 		case "getRecords":
 			$domainId = idForZone($data["zone"])["id"];
-			$getRecords = sql("SELECT `name`,`type`,`content`,`ttl`,`prio`,`uuid` FROM `records` WHERE `domain_id` = ? AND `system` != 1 AND `type` IS NOT NULL AND `uuid` IS NOT NULL ORDER BY `type`,`name`,`prio` ASC", [$domainId]);
+
+			$name = "%";
+			if ($data["name"]) {
+				$name = $data["name"];
+			}
+
+			$type = "%";
+			if ($data["type"]) {
+				$type = $data["type"];
+			}
+
+			$getRecords = sql("SELECT `name`,`type`,`content`,`ttl`,`prio`,`uuid` FROM `records` WHERE `domain_id` = ? AND `name` LIKE ? AND `type` LIKE ? AND `system` != 1 AND `type` IS NOT NULL AND `uuid` IS NOT NULL ORDER BY `type`,`name`,`prio` ASC", [$domainId, $name, $type]);
 			die(json_encode($getRecords));
 			break;
 
