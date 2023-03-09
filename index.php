@@ -111,6 +111,11 @@
 			$createNS1 = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) VALUES (?,?,?,?,?,?,?,?)", [$domainId, $data["domain"], "NS", $ns1Record, 20, 0, uuid(), 1]);
 			$createNS2 = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) VALUES (?,?,?,?,?,?,?,?)", [$domainId, $data["domain"], "NS", $ns2Record, 20, 0, uuid(), 1]);
 			$secureZone = pdns("secure-zone ".$data["domain"]);
+
+			$output = [
+				"zone" => $zone
+			];
+			die(json_encode($output));
 			break;
 
 		case "deleteZone":
