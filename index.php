@@ -85,7 +85,12 @@
 				$type = $data["type"];
 			}
 
-			$getRecords = sql("SELECT `name`,`type`,`content`,`ttl`,`prio`,`uuid` FROM `records` WHERE `domain_id` = ? AND `name` LIKE ? AND `type` LIKE ? AND `system` != 1 AND `type` IS NOT NULL AND `uuid` IS NOT NULL ORDER BY `type`,`name`,`prio` ASC", [$domainId, $name, $type]);
+			$content = "%";
+			if ($data["content"]) {
+				$content = $data["content"];
+			}
+
+			$getRecords = sql("SELECT `name`,`type`,`content`,`ttl`,`prio`,`uuid` FROM `records` WHERE `domain_id` = ? AND `name` LIKE ? AND `type` LIKE ? AND `content` LIKE ? AND `system` != 1 AND `type` IS NOT NULL AND `uuid` IS NOT NULL ORDER BY `type`,`name`,`prio` ASC", [$domainId, $name, $type, $content]);
 			die(json_encode($getRecords));
 			break;
 
