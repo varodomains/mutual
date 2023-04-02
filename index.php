@@ -23,6 +23,10 @@
 				$data["prio"] = 0;
 			}
 
+			if ($data["content"] === "@") {
+				$data["content"] = $domain;
+			}
+
 			$data["name"] = formatName($data["name"], $domain);
 			break;
 
