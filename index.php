@@ -72,7 +72,7 @@
 			break;
 
 		case "getZones":
-			$getZones = sql("SELECT `name`,`uuid` AS `id` FROM `domains` WHERE `account` = ? AND `uuid` IS NOT NULL AND `registrar` IS NULL AND `name` NOT LIKE '[disabled]%' ORDER BY `name` ASC", [$data["user"]]);
+			$getZones = sql("SELECT `name`,`uuid` AS `id` FROM `domains` WHERE `account` = ? AND `uuid` IS NOT NULL AND `registrar` IS NULL AND `name` NOT LIKE '[%' ORDER BY `name` ASC", [$data["user"]]);
 			die(json_encode($getZones));
 			break;
 
