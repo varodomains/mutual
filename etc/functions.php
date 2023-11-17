@@ -40,7 +40,7 @@
 	function nsForDomain($domain) {
 		$isHandshake = @sql("SELECT `handshake` FROM `domains` WHERE `name` = ?", [$domain])[0]["handshake"];
 
-		if ($isHandshake) {
+		if ($isHandshake && strpos($domain, ".") == false) {
 			$nsRecords = [$GLOBALS["handshakeNS1"], $GLOBALS["handshakeNS2"]];
 		}
 		else {
