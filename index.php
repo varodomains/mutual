@@ -243,17 +243,7 @@
 			$domainId = idForZone($data["zone"])["id"];
 			$recordInfo = recordForID($data["record"]);
 
-			if (in_array($recordInfo["type"], ["REDIRECT", "WALLET"])) {
-				$parkingRecords = recordsForParking($data["record"]);
-				$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$data["record"]]);
-				$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$parkingRecords["LUA"]]);
-				if (@$parkingRecords["TLSA"]) {
-					$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$parkingRecords["TLSA"]]);
-				}
-			}
-			else {
-				$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$data["record"]]);
-			}
+			$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$data["record"]]);
 
 			if ($recordInfo["name"] === $domain) {
 				addParkingIfNeeded($domain, $domainId);
