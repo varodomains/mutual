@@ -99,9 +99,11 @@
 			"domain_id" => $domainId
 		]);
 
-		$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$parkingRecords["LUA"]]);
-		if (@$parkingRecords["TLSA"]) {
-			$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$parkingRecords["TLSA"]]);
+		if ($parkingRecords) {
+			$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$parkingRecords["LUA"]]);
+			if (@$parkingRecords["TLSA"]) {
+				$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$parkingRecords["TLSA"]]);
+			}
 		}
 	}
 

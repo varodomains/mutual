@@ -160,15 +160,12 @@
 			$domain = domainForZone($data["zone"]);
 			$domainId = idForZone($data["zone"])["id"];
 
-			if ($domain === $data["name"]) {
-				deleteParkingRecords($domain, $domainId);
-			}
-			
 			if (in_array($data["type"], ["REDIRECT", "WALLET"])) {
 				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, auth, disabled) values (?,?,?,?,?,?,?,?,?)", [$domainId, $data["name"], $data["type"], $data["content"], $data["ttl"], $data["prio"], uuid(), 0, 1]);
-				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) values (?,?,?,?,?,?,?,?)", [$domainId, $data["name"], "LUA", luaAlias("parking"), $data["ttl"], $data["prio"], uuid(), 1]);
+				addParkingIfNeeded($data["name"], $domainId);
 			}
 			else {
+				deleteParkingRecords($data["name"], $domainId);
 				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid) values (?,?,?,?,?,?,?)", [$domainId, $data["name"], $data["type"], $data["content"], $data["ttl"], $data["prio"], uuid()]);
 			}
 
@@ -247,6 +244,9 @@
 
 			if ($recordInfo["name"] === $domain) {
 				addParkingIfNeeded($domain, $domainId);
+			}
+			else {
+				deleteParkingRecords($recordInfo["name"], $domainId);
 			}
 
 			$rectifyZone = pdns("rectify-zone ".$domain);
