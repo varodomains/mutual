@@ -33,7 +33,7 @@
 		case "updateRecord":
 			$domain = domainForZone($data["zone"]);
 
-			if ($data["type"] !== "MX") {
+			if (@$data["type"] !== "MX") {
 				$data["prio"] = 0;
 			}
 
@@ -80,17 +80,17 @@
 			$domainId = idForZone($data["zone"])["id"];
 
 			$name = "%";
-			if ($data["name"]) {
+			if (@$data["name"]) {
 				$name = $data["name"];
 			}
 
 			$type = "%";
-			if ($data["type"]) {
+			if (@$data["type"]) {
 				$type = $data["type"];
 			}
 
 			$content = "%";
-			if ($data["content"]) {
+			if (@$data["content"]) {
 				$content = $data["content"];
 			}
 
@@ -119,6 +119,7 @@
 			$createSOA = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) VALUES (?,?,?,?,?,?,?,?)", [$domainId, $data["domain"], "SOA", $soaRecord, 20, 0, uuid(), 1]);
 			$createNS1 = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) VALUES (?,?,?,?,?,?,?,?)", [$domainId, $data["domain"], "NS", $ns1Record, 20, 0, uuid(), 1]);
 			$createNS2 = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) VALUES (?,?,?,?,?,?,?,?)", [$domainId, $data["domain"], "NS", $ns2Record, 20, 0, uuid(), 1]);
+			$createParkingAlias = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) VALUES (?,?,?,?,?,?,?,?)", [$domainId, $data["domain"], "LUA", luaAlias("parking"), 20, 0, uuid(), 1]);
 			$secureZone = pdns("secure-zone ".$data["domain"]);
 
 			$output = [
@@ -158,11 +159,14 @@
 		case "newRecord":
 			$domain = domainForZone($data["zone"]);
 			$domainId = idForZone($data["zone"])["id"];
+
+			if ($domain === $data["name"]) {
+				deleteParkingRecords($domain, $domainId);
+			}
 			
-			if ($data["type"] == "REDIRECT") {
-				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, disabled) values (?,?,?,?,?,?,?,?)", [$domainId, $data["name"], $data["type"], $data["content"], $data["ttl"], $data["prio"], uuid(), 1]);
-				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) values (?,?,?,?,?,?,?,?)", [$domainId, $data["name"], "ALIAS", "redirect.".$GLOBALS["icannHostname"], $data["ttl"], $data["prio"], uuid(), 1]);
-				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) values (?,?,?,?,?,?,?,?)", [$domainId, "_redirect.".$data["name"], "TXT", "v=txtv0;type=host;to=".$data["content"], $data["ttl"], $data["prio"], uuid(), 1]);
+			if (in_array($data["type"], ["REDIRECT", "WALLET"])) {
+				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, auth, disabled) values (?,?,?,?,?,?,?,?,?)", [$domainId, $data["name"], $data["type"], $data["content"], $data["ttl"], $data["prio"], uuid(), 0, 1]);
+				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) values (?,?,?,?,?,?,?,?)", [$domainId, $data["name"], "LUA", luaAlias("parking"), $data["ttl"], $data["prio"], uuid(), 1]);
 			}
 			else {
 				$addRecord = sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid) values (?,?,?,?,?,?,?)", [$domainId, $data["name"], $data["type"], $data["content"], $data["ttl"], $data["prio"], uuid()]);
@@ -173,29 +177,30 @@
 
 		case "updateRecord":
 			$domain = domainForZone($data["zone"]);
+			$domainId = idForZone($data["zone"])["id"];
 			$recordInfo = recordForID($data["record"]);
 
-			if ($recordInfo["type"] == "REDIRECT") {
-				$redirectRecords = recordsForRedirect($data["record"]);
-				switch ($data["column"]) {
-					case "name":
-						$aliasValue = $data["value"];
-						$txtValue = "_redirect.".$data["value"];
-						break;
+			if ($data["column"] === "name" && $data["value"] === $domain) {
+				deleteParkingRecords($domain, $domainId);
+			}
 
-					case "content":
-						$txtValue = "v=txtv0;type=host;to=".$data["value"];
-						break;
-				}
+			if (in_array($recordInfo["type"], ["REDIRECT", "WALLET"])) {
+				if ($data["column"] === "name") {
+					$parkingRecords = recordsForParking($data["record"]);
+					$updateRecord = sql("UPDATE `records` SET `name` = ? WHERE `uuid` = ?", [$data["value"], $parkingRecords["LUA"]]);
 
-				if (@$aliasValue) {
-					$updateRecord = sql("UPDATE `records` SET `".$data["column"]."` = ? WHERE `uuid` = ?", [$aliasValue, $redirectRecords["ALIAS"]]);
+					if (@$parkingRecords["TLSA"]) {
+						$updateRecord = sql("UPDATE `records` SET `name` = ? WHERE `uuid` = ?", ["_443._tcp.".$data["value"], $parkingRecords["TLSA"]]);
+					}
 				}
-				$updateRecord = sql("UPDATE `records` SET `".$data["column"]."` = ? WHERE `uuid` = ?", [$txtValue, $redirectRecords["TXT"]]);
 				$updateRecord = sql("UPDATE `records` SET `".$data["column"]."` = ? WHERE `uuid` = ?", [$data["value"], $data["record"]]);
 			}
 			else {
 				$updateRecord = sql("UPDATE `records` SET `".$data["column"]."` = ? WHERE `uuid` = ?", [$data["value"], $data["record"]]);
+			}
+
+			if ($recordInfo["name"] === $domain) {
+				addParkingIfNeeded($domain, $domainId);
 			}
 
 			$rectifyZone = pdns("rectify-zone ".$domain);
@@ -204,16 +209,29 @@
 
 		case "editRecord":
 			$domain = domainForZone($data["zone"]);
+			$domainId = idForZone($data["zone"])["id"];
 			$recordInfo = recordForID($data["record"]);
 
-			if ($recordInfo["type"] == "REDIRECT") {
-				$redirectRecords = recordsForRedirect($data["record"]);
-				$updateRecord = sql("UPDATE `records` SET `name` = ? WHERE `uuid` = ?", [$data["name"], $redirectRecords["ALIAS"]]);
-				$updateRecord = sql("UPDATE `records` SET `name` = ?, `content` = ? WHERE `uuid` = ?", ["_redirect.".$data["name"], "v=txtv0;type=host;to=".$data["content"], $redirectRecords["TXT"]]);
+			if ($data["name"] === $domain) {
+				deleteParkingRecords($domain, $domainId);
+			}
+
+			if (in_array($recordInfo["type"], ["REDIRECT", "WALLET"])) {
+				$parkingRecords = recordsForParking($data["record"]);
+				$updateRecord = sql("UPDATE `records` SET `name` = ? WHERE `uuid` = ?", [$data["name"], $parkingRecords["LUA"]]);
+				
+				if (@$parkingRecords["TLSA"]) {
+					$updateRecord = sql("UPDATE `records` SET `name` = ? WHERE `uuid` = ?", ["_443._tcp.".$data["name"], $parkingRecords["TLSA"]]);
+				}
+
 				$updateRecord = sql("UPDATE `records` SET `name` = ?, `content` = ?, `prio` = ?, `ttl` = ? WHERE `uuid` = ?", [$data["name"], $data["content"], $data["prio"], $data["ttl"], $data["record"]]);
 			}
 			else {
 				$updateRecord = sql("UPDATE `records` SET `name` = ?, `content` = ?, `prio` = ?, `ttl` = ? WHERE `uuid` = ?", [$data["name"], $data["content"], $data["prio"], $data["ttl"], $data["record"]]);
+			}
+
+			if ($recordInfo["name"] === $domain) {
+				addParkingIfNeeded($domain, $domainId);
 			}
 			
 			$rectifyZone = pdns("rectify-zone ".$domain);
@@ -222,15 +240,23 @@
 
 		case "deleteRecord":
 			$domain = domainForZone($data["zone"]);
+			$domainId = idForZone($data["zone"])["id"];
 			$recordInfo = recordForID($data["record"]);
 
-			if ($recordInfo["type"] == "REDIRECT") {
+			if (in_array($recordInfo["type"], ["REDIRECT", "WALLET"])) {
+				$parkingRecords = recordsForParking($data["record"]);
 				$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$data["record"]]);
-				$deleteRecord = sql("DELETE FROM `records` WHERE `type` = 'ALIAS' AND `name` = ? AND `system` = 1 AND `domain_id` = ?", [$recordInfo["name"], $recordInfo["domain_id"]]);
-				$deleteRecord = sql("DELETE FROM `records` WHERE `type` = 'TXT' AND `name` = ? AND `system` = 1 AND `domain_id` = ?", ["_redirect.".$recordInfo["name"], $recordInfo["domain_id"]]);
+				$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$parkingRecords["LUA"]]);
+				if (@$parkingRecords["TLSA"]) {
+					$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$parkingRecords["TLSA"]]);
+				}
 			}
 			else {
 				$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$data["record"]]);
+			}
+
+			if ($recordInfo["name"] === $domain) {
+				addParkingIfNeeded($domain, $domainId);
 			}
 
 			$rectifyZone = pdns("rectify-zone ".$domain);

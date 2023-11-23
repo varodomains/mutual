@@ -56,13 +56,64 @@
 
 	function recordsForRedirect($record) {
 		$recordInfo = recordForID($record);
-		$aliasRecord = sql("SELECT * FROM `records` WHERE `type` = 'ALIAS' AND `name` = ? AND `system` = 1 AND `domain_id` = ?", [$recordInfo["name"], $recordInfo["domain_id"]])[0]["uuid"];
+		$aliasRecord = sql("SELECT * FROM `records` WHERE `type` = 'LUA' AND `name` = ? AND `system` = 1 AND `domain_id` = ? AND `content` LIKE '%parking.%'", [$recordInfo["name"], $recordInfo["domain_id"]])[0]["uuid"];
 		$txtRecord = sql("SELECT * FROM `records` WHERE `type` = 'TXT' AND `name` = ? AND `system` = 1 AND `domain_id` = ?", ["_redirect.".$recordInfo["name"], $recordInfo["domain_id"]])[0]["uuid"];
 
 		return [
 			"ALIAS" => $aliasRecord,
 			"TXT" => $txtRecord
 		];
+	}
+
+	function recordForWallet($record) {
+		$recordInfo = recordForID($record);
+		$aliasRecord = sql("SELECT * FROM `records` WHERE `type` = 'LUA' AND `name` = ? AND `system` = 1 AND `domain_id` = ? AND `content` LIKE '%parking.%'", [$recordInfo["name"], $recordInfo["domain_id"]])[0]["uuid"];
+		return $aliasRecord;
+	}
+
+	function recordsForParking($record, $recordInfo=false) {
+		if ($record) {
+			$recordInfo = recordForID($record);
+		}
+
+		$records = [];
+		$luaRecord = @sql("SELECT * FROM `records` WHERE `type` = 'LUA' AND `name` = ? AND `system` = 1 AND `domain_id` = ?", [$recordInfo["name"], $recordInfo["domain_id"]])[0]["uuid"];
+		$tlsaRecord = @sql("SELECT * FROM `records` WHERE `type` = 'TLSA' AND `name` = ? AND `system` = 1 AND `domain_id` = ?", ["_443._tcp.".$recordInfo["name"], $recordInfo["domain_id"]])[0]["uuid"];
+
+		if ($luaRecord) {
+			$records["LUA"] = $luaRecord;
+		}
+		if ($tlsaRecord) {
+			$records["TLSA"] = $tlsaRecord;
+		}
+
+		if (count($records)) {
+			return $records;
+		}
+		return false;
+	}
+
+	function deleteParkingRecords($domain, $domainId) {
+		$parkingRecords = recordsForParking(false, [
+			"name" => $domain,
+			"domain_id" => $domainId
+		]);
+
+		$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$parkingRecords["LUA"]]);
+		if (@$parkingRecords["TLSA"]) {
+			$deleteRecord = sql("DELETE FROM `records` WHERE `uuid` = ?", [$parkingRecords["TLSA"]]);
+		}
+	}
+
+	function addParkingIfNeeded($domain, $domainId) {
+		$parkingRecords = recordsForParking(false, [
+			"name" => $domain,
+			"domain_id" => $domainId
+		]);
+
+		if (!$parkingRecords) {
+			sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) VALUES (?,?,?,?,?,?,?,?)", [$domainId, $domain, "LUA", luaAlias("parking"), 20, 0, uuid(), 1]);
+		}
 	}
 
 	function getTLDS() {
@@ -119,5 +170,9 @@
 		}
 
 		return $name;
+	}
+
+	function luaAlias($subdomain) {
+		return 'A ";local r=resolve(\''.$subdomain.'.'.$GLOBALS["icannHostname"].'\', pdns.A) local t={} for _,v in ipairs(r) do table.insert(t, v:toString()) end return t"';
 	}
 ?>
