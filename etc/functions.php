@@ -108,12 +108,14 @@
 	}
 
 	function addParkingIfNeeded($domain, $domainId) {
+		$recordsExists = sql("SELECT * FROM `records` WHERE `domain_id` = ? AND `name` = ? AND `type` IN ('A', 'CNAME', 'ALIAS')", [$domainId, $domain]);
+
 		$parkingRecords = recordsForParking(false, [
 			"name" => $domain,
 			"domain_id" => $domainId
 		]);
 
-		if (!$parkingRecords) {
+		if (!$recordsExists && !$parkingRecords) {
 			sql("INSERT INTO `records` (domain_id, name, type, content, ttl, prio, uuid, system) VALUES (?,?,?,?,?,?,?,?)", [$domainId, $domain, "LUA", luaAlias("parking"), 20, 0, uuid(), 1]);
 		}
 	}
